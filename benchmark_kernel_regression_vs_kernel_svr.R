@@ -1,5 +1,5 @@
 idempotent_kernel_regression <- function(x,y,bandwidth,eps=10^-11){
-   kernel_matrix <- gausskernel(X=x,sigma=bandwidth)
+   kernel_matrix <- KRLS::gausskernel(X=x,sigma=bandwidth)
    model <- list(Q=t(kernel_matrix)%*%kernel_matrix + diag(rep(eps,length(x))),obj=-2*t(y)%*%kernel_matrix)
    model$A <- array(1,c(1,length(x)))
    model$sense <- "<="
