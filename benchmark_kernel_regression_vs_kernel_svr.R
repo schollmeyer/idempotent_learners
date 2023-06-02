@@ -1,3 +1,5 @@
+### functions
+
 idempotent_kernel_regression <- function(x,y,bandwidth,eps=10^-11){
    kernel_matrix <- KRLS::gausskernel(X=x,sigma=bandwidth)
    model <- list(Q=t(kernel_matrix)%*%kernel_matrix + diag(rep(eps,length(x))),obj=-2*t(y)%*%kernel_matrix)
@@ -17,3 +19,9 @@ idempotent_kernel_regression <- function(x,y,bandwidth,eps=10^-11){
    # print(solution$status)
    return(kernel_matrix%*%solution$x)
    }
+
+### simulation scenarios
+
+x <- seq(1,200,1)
+y_true <- 5*sin(x^4/5000000)+0.01*x
+y <- y_true+ 2 * rnorm(100)
