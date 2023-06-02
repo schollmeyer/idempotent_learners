@@ -21,6 +21,11 @@ idempotent_kernel_regression <- function(x,y,bandwidth,eps=10^-11){
    }
 
 ### simulation scenarios
+n_sample <- 200
+eps <- 2
+x <- seq(1,n_sample,1)
+y_true <- 5*sin(x/10)+0.01*x
+y <- y_true+ eps * rnorm(n_sample)
 
 x <- seq(1,200,1)
 y_true <- 5*sin(x^4/5000000)+0.01*x
