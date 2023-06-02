@@ -12,7 +12,7 @@ idempotent_kernel_regression <- function(x,y,bandwidth,eps=10^-11){
    while(is.null(solution$x) | solution$status=="SUBOPTIMAL"){
         eps <- eps * 9/8
 	# print(eps)
-	model$Q <- t(kernel_matrix)%*%K +diag(rep(eps,length(x)))	
+	model$Q <- t(kernel_matrix)%*%kernel_matrix +diag(rep(eps,length(x)))	
         solution <- try(gurobi(model,list(outputflag=0)), silent=TRUE)
    }
    # solution <<- solution
