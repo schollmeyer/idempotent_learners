@@ -42,7 +42,7 @@ bandwidth_selection <- function(x,y_true,sd,learner,bandwidths,n_rep, ...){
 	       
 	}
 	       
-	       return(list(optimal_bandwidth=bandwidths[which.min(mses)],bandwidths=bandwidths,mese=mses))
+	       return(list(optimal_bandwidth=bandwidths[which.min(mses)],bandwidths=bandwidths,mses=mses))
    	
 }
 	  
@@ -52,21 +52,24 @@ bandwidth_selection <- function(x,y_true,sd,learner,bandwidths,n_rep, ...){
 # scenario 1
 
 n_sample <- 200
-sd <- 2
+sd <- 10
 x <- seq(1,n_sample,1)
 y_true <- 5*sin(x/10)+0.01*x
 y <- y_true+ sd * rnorm(n_sample)
 plot(x,y)
 lines(x,y_true)
 # idempotent model
-optimal_bandwidth <- bandwidth_selection(x=x,y_true=y_true,sd=sd,learner=idempotent_kernel_regression,bandwidths=seq(2000,5000,length.out=40),n_rep=10,eps=10^-8)$optimal_bandwidth
-idempotent_model <- idempotent_kernel_regression(x=x,y=y,bandwidth=optimal_bandwidth,eps=10^-8)
+idempotent_tuning <- bandwidth_selection(x=x,y_true=y_true,sd=sd,learner=idempotent_kernel_regression,bandwidths=seq(100,10000,length.out=100),n_rep=10,eps=10^-8)
+idempotent_model <- idempotent_kernel_regression(x=x,y=y,bandwidth=idempotent_tuning$optimal_bandwidth,eps=10^-8)
+print(idempotent_tuning$mses)
 lines(x,idempotent_model$fitted,col="blue")
-mean((y_true-idempotent_model$fitted)^2)	 
+mean((y_true-idempotent_model$fitted)^2)
+
+
 # classical kernelregression
 	 
-optimal_bandwidth <- bandwidth_selection(x=x,y_true=y_true,sd=sd,learner=classical_kernel_regression,bandwidths=seq(1,20,length.out=200),n_rep=10)$optimal_bandwidth
-classical_model <- classical_kernel_regression(x=x,y=y,bandwidth=optimal_bandwidth)
+classical_tuning <- bandwidth_selection(x=x,y_true=y_true,sd=sd,learner=classical_kernel_regression,bandwidths=seq(1,60,length.out=100),n_rep=10)
+classical_model <- classical_kernel_regression(x=x,y=y,bandwidth=classical_tuning$optimal_bandwidth)
 lines(x,classical_model$fitted,col="red")
 mean((y_true-classical_model$fitted)^2)
 
