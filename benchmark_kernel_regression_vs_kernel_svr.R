@@ -9,8 +9,9 @@ classical_support_vector_regression <- function(x,y,bandwidth){
   return(list(x=x,y=y,bandwidth=bandwidth,fitted=model$fitted))
 }
 
-idempotent_kernel_regression <- function(x,y,bandwidth,eps=10^-11){
+idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion"eps=10^-11){
    kernel_matrix <- KRLS::gausskernel(X=x,sigma=bandwidth)
+   if(method="quadratic_programminG"){	
    model <- list(Q=t(kernel_matrix)%*%kernel_matrix + diag(rep(eps,length(x))),obj=-2*t(y)%*%kernel_matrix)
    model$A <- array(1,c(1,length(x)))
    model$sense <- "<="
@@ -23,6 +24,7 @@ idempotent_kernel_regression <- function(x,y,bandwidth,eps=10^-11){
 	# print(eps)
 	model$Q <- t(kernel_matrix)%*%kernel_matrix +diag(rep(eps,length(x)))	
         solution <- try(gurobi(model,list(outputflag=0)), silent=TRUE)
+   }
    }
    # solution <<- solution
    # print(solution$status)
