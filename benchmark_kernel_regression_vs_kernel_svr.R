@@ -9,9 +9,10 @@ classical_support_vector_regression <- function(x,y,bandwidth){
   return(list(x=x,y=y,bandwidth=bandwidth,fitted=model$fitted))
 }
 
-idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion"eps=10^-11){
+idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",eps=10^-11,lambda=0){
    kernel_matrix <- KRLS::gausskernel(X=x,sigma=bandwidth)
-   if(method="quadratic_programminG"){	
+   dirty_kernel_matrix <- kernel_matrix+diag(rep(lambda,length(x)))
+   if(method=="quadratic_programming"){	
    model <- list(Q=t(kernel_matrix)%*%kernel_matrix + diag(rep(eps,length(x))),obj=-2*t(y)%*%kernel_matrix)
    model$A <- array(1,c(1,length(x)))
    model$sense <- "<="
@@ -25,10 +26,22 @@ idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion"e
 	model$Q <- t(kernel_matrix)%*%kernel_matrix +diag(rep(eps,length(x)))	
         solution <- try(gurobi(model,list(outputflag=0)), silent=TRUE)
    }
+	solution <- solution$x   
    }
+  if(method=="dirty_inversion"){
+  q <- t(dirty_kernel_matrix)%*%dirty_kernel_matrix
+  solution <- try(solution <- solve ( q, dirty_kernel_matrix%*%y),silent=TRUE)
+  while(is.character(solution)){
+	  q <- q + diag(rep(eps,length(x)))
+  #dirty_kernel_matrix <- dirty_kernel_matrix +diag(rep(eps,length(x)))
+  #q <- t(dirty_kernel_matrix)%*%dirty_kernel_matrix
+  solution <- try(solution <- solve ( q, dirty_kernel_matrix%*%y),silent=TRUE)
+
+  }
+  }
    # solution <<- solution
    # print(solution$status)
-   return(list(x=x,y=y,fitted=kernel_matrix%*%solution$x,bandwidth=bandwidth,eps=eps,optimal_solution=solution,kernel_matrix=kernel_matrix,model=model))
+   return(list(x=x,y=y,fitted=kernel_matrix%*%solution,bandwidth=bandwidth,eps=eps,optimal_solution=solution,kernel_matrix=kernel_matrix,model=model))
    }
 
 	  
@@ -53,7 +66,19 @@ bandwidth_selection <- function(x,y_true,sd,learner,bandwidths,n_rep, ...){
    	
 }
 	  
+bandwidth_optimization <- function(x,y_true,sd,n_rep){
+  f <- function(par){
+	  result <-0
+	  for(k in (1:n_rep)){
+		  y <- y_true+rnorm(length(y_true),sd=sd)
+		result <- result+ mean((y-idempotent_kernel_regression(x,y,bandwidth=par[1],lambda=exp(-par[2]))$fitted)^2)
+		  
+	}
+return(result/n_rep)}
+	return(optim(fn=f,par=c(100,-5)))
+}
 	  
+bandwidth_optimization(x,y,sd=400,n_rep=10)
 
 ### simulation scenarios
 # scenario 1
