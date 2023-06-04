@@ -38,10 +38,11 @@ idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",
   solution <- try(solution <- solve ( q, dirty_kernel_matrix%*%y),silent=TRUE)
 
   }
+	  hat_matrix <- kernel_matrix%*%solve(q,dirty_kernel_matrix)
   }
    # solution <<- solution
    # print(solution$status)
-   return(list(x=x,y=y,fitted=kernel_matrix%*%solution,bandwidth=bandwidth,eps=eps,optimal_solution=solution,kernel_matrix=kernel_matrix,model=model))
+   return(list(x=x,y=y,fitted=kernel_matrix%*%solution,bandwidth=bandwidth,eps=eps,optimal_solution=solution,kernel_matrix=kernel_matrix,model=model,hat_matrix=hat_matrix))
    }
 
 	  
@@ -66,16 +67,25 @@ bandwidth_selection <- function(x,y_true,sd,learner,bandwidths,n_rep, ...){
    	
 }
 	  
-bandwidth_optimization <- function(x,y_true,sd,n_rep){
-  f <- function(par){
+bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL){
+	lambda <<- NULL
+	bandwidth <<- NULL
+	loss <<- NULL
+  f <- function(param){
 	  result <-0
 	  for(k in (1:n_rep)){
-		  y <- y_true+rnorm(length(y_true),sd=sd)
-		result <- result+ mean((y-idempotent_kernel_regression(x,y,bandwidth=par[1],lambda=exp(-par[2]))$fitted)^2)
+		  #y <- y_true+rnorm(length(y_true),sd=sd)
+		result <- result+ mean((y_true-idempotent_kernel_regression(x,y,bandwidth=2^param[1],lambda=exp(-param[2]))$fitted)^2)
 		  
 	}
+	lambda <<- c(lambda,exp(-param[2]))
+	 bandwidth <<- c(bandwidth,2^(param[1]))
+	 loss <<- c(loss,result/n_rep)
 return(result/n_rep)}
-	return(optim(fn=f,par=c(100,-5)))
+	if(is.null(opts){opts <- list(algorithm="NLOPT_GN_DIRECT",maxeval=10^9)}
+
+	return(nloptr(x0=c(10,lambdastart),eval_f=f,opts=opts,lb=lb,ub=ub))
+	#return(optim(fn=f,par=c(10,lambdastart),method=method,control=control))
 }
 	  
 bandwidth_optimization(x,y,sd=400,n_rep=10)
@@ -84,13 +94,15 @@ bandwidth_optimization(x,y,sd=400,n_rep=10)
 # scenario 1
 
 n_sample <- 200
-sd <- 400
+sd <- 5
 x <- seq(1,n_sample,1)
-y_true <- 15*x*sin(x/10)+0.01*x
+y_true <- 5*sin(x/10)+.1*x
 y <- y_true+ sd * rnorm(n_sample)
 plot(x,y)
 lines(x,y_true)
 # idempotent model
+ans <- bandwidth_optimization(x,y_true,sd=sd,n_rep=1,method="Nelder-Mead",control=list(maxit=100000000)
+
 idempotent_tuning <- bandwidth_selection(x=x,y_true=y_true,sd=sd,learner=idempotent_kernel_regression,bandwidths=seq(100,5000,length.out=100),n_rep=10,eps=10^-8)
 idempotent_model <- idempotent_kernel_regression(x=x,y=y,bandwidth=idempotent_tuning$optimal_bandwidth,eps=10^-8)
 print(idempotent_tuning$mses)
