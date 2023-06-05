@@ -82,7 +82,7 @@ bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL){
 	 bandwidth <<- c(bandwidth,2^(param[1]))
 	 loss <<- c(loss,result/n_rep)
 return(result/n_rep)}
-	if(is.null(opts){opts <- list(algorithm="NLOPT_GN_DIRECT",maxeval=10^9)}
+	if(is.null(opts)){opts <- list(algorithm="NLOPT_GN_ESCH",maxeval=10^9)} #NLOPT_GN_DIRECT
 
 	return(nloptr(x0=c(10,lambdastart),eval_f=f,opts=opts,lb=lb,ub=ub))
 	#return(optim(fn=f,par=c(10,lambdastart),method=method,control=control))
