@@ -87,7 +87,67 @@ return(result/n_rep)}
 	return(nloptr(x0=c(10,lambdastart),eval_f=f,opts=opts,lb=lb,ub=ub))
 	#return(optim(fn=f,par=c(10,lambdastart),method=method,control=control))
 }
-	  
+
+bandwidth_heuristic <- function(x,y,n_iter=100){
+	bw <<- NULL
+	rel_diff <<- NULL
+	y_hat_1 <- mean(y)
+	y_hat_2 <- y
+	eps_1 <- y_hat_1 - y
+	eps_2 <-y_hat_2 - y
+	sd_1 <- sd(eps_1)
+	sd_2 <- sd(eps_2)
+	y_hat_start <- (y_hat_1 + y_hat_2)/2
+	sd_start <- (sd_1+sd_2)/2
+	sd <- sd_start
+	y_start <- y_hat_start +rnorm(length(y),sd=sd)
+	bandwidth <- bw_start
+	y_true <- y#y_start
+	y_new <- y_start +rnorm(length(x),sd=sd)
+	for(k in (1:n_iter)){
+		
+		
+		y_true <- idempotent_kernel_regression(x,y,bandwidth=bandwidth,lambda=0)$fitted
+		sd <- sd(y-y_true)
+		y_new <- y_true +rnorm(length(x),sd=sd)
+		true_total_variation <- total_variation(x,y_true)
+		estimated_model <- idempotent_kernel_regression(x,y_new,bandwidth=bandwidth,lambda=0)
+		estimated_total_variation <- total_variation(x,estimated_model$fitted)
+		if(true_total_variation < estimated_total_variation){bandwidth <- bandwidth * relaxation}
+		else{bandwidth <- bandwidth / relaxation_2}
+		
+		print(true_total_variation)
+		print(estimated_total_variation)
+		bw <<- c(bw, bandwidth)
+		rel_diff <<- c(rel_diff,abs(true_total_variation-estimated_total_variation)/true_total_variation)
+		plot(rel_diff)
+	}
+	
+	return(bandwidth)
+}	
+
+
+total_variation <- function(x,y){
+	o <- order(x)
+	x_ordered <- x[o]
+	y_ordered <- y[o]
+	result <- 0
+	for(k in (1:(length(x)-1))){
+		result <- result + abs(y_ordered[k+1]-y_ordered[k])
+	}
+	    
+return(result)}
+		
+		
+	
+	
+	
+	
+	}
+	
+	
+	
+
 bandwidth_optimization(x,y,sd=400,n_rep=10)
 
 ### simulation scenarios
