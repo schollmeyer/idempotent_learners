@@ -126,6 +126,29 @@ bandwidth_heuristic <- function(x,y,n_iter=100){
 	return(bandwidth)
 }	
 
+bwh <- function(x,y, bw_start){
+	bw <<- NULL
+	bandwidth <- bw_start
+	while(TRUE){
+		model <- idempotent_kernel_regression(x,y,bandwidth=bandwidth,lambda=0)
+		sd <- sd(model$fitted-y)
+		temp <- 0
+		for(k in (1:10)){
+		model_2 <- idempotent_kernel_regression(x,model$fitted+rnorm(length(y),sd=sd),bandwidth=bandwidth,lambda=0)
+		temp <- temp + total_variation(x,model_2$fitted)
+	        }
+	        temp <- temp/10
+		
+		delta <- total_variation(x,model$fitted) - temp
+		
+		if(delta >0){
+			bandwidth=bandwidth/relaxation
+		}
+		   else{bandwidth=bandwidth*relaxation}
+		 bw <<- c(bw, delta)  
+		plot(bw)	
+		print(bandwidth)
+	}}	
 
 total_variation <- function(x,y){
 	o <- order(x)
