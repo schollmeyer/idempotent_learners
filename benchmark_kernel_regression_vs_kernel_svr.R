@@ -67,24 +67,44 @@ bandwidth_selection <- function(x,y_true,sd,learner,bandwidths,n_rep, ...){
    	
 }
 	  
-bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL){
+bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL,lb=c(0,0),ub=c(100000,10000),bandwidth_only=FALSE){
 	lambda <<- NULL
 	bandwidth <<- NULL
 	loss <<- NULL
+
+	if(bandwidth_only){
+	   f <- function(param){
+	  result <-0
+	  for(k in (1:n_rep)){
+		  #y <- y_true+rnorm(length(y_true),sd=sd)
+		result <- result+ mean((y_true-idempotent_kernel_regression(x,y,bandwidth=param[1],lambda=0)$fitted)^2)
+		  
+	}
+	lambda <<- c(lambda,exp(-param[2]))
+	 bandwidth <<- c(bandwidth,(param[1]))
+	 loss <<- c(loss,result/n_rep)
+  return(result/n_rep)}
+		}
+else{	
   f <- function(param){
 	  result <-0
 	  for(k in (1:n_rep)){
 		  #y <- y_true+rnorm(length(y_true),sd=sd)
-		result <- result+ mean((y_true-idempotent_kernel_regression(x,y,bandwidth=2^param[1],lambda=exp(-param[2]))$fitted)^2)
+		result <- result+ mean((y_true-idempotent_kernel_regression(x,y,bandwidth=param[1],lambda=param[2])$fitted)^2)
 		  
 	}
 	lambda <<- c(lambda,exp(-param[2]))
 	 bandwidth <<- c(bandwidth,2^(param[1]))
 	 loss <<- c(loss,result/n_rep)
-return(result/n_rep)}
+  return(result/n_rep)}
+	}
 	if(is.null(opts)){opts <- list(algorithm="NLOPT_GN_ESCH",maxeval=10^9)} #NLOPT_GN_DIRECT
-
-	return(nloptr(x0=c(10,lambdastart),eval_f=f,opts=opts,lb=lb,ub=ub))
+        if(bandwidth_only){
+	return(nloptr(x0=c(10),eval_f=f,opts=opts,lb=0,ub=50000))
+		}
+	else{
+	return(nloptr(x0=c(10,1),eval_f=f,opts=opts,lb=lb,ub=ub))
+		}
 	#return(optim(fn=f,par=c(10,lambdastart),method=method,control=control))
 }
 
@@ -169,7 +189,9 @@ return(result)}
 	}
 	
 	
-	
+
+
+library(nloptr)
 
 bandwidth_optimization(x,y,sd=400,n_rep=10)
 
@@ -208,9 +230,14 @@ lines(x,classical_svr_model$fitted,col="purple")
 mean((y_true-classical_svr_model$fitted)^2)
 
 
+# scenario 2:
 
+			      −2x+x sin(x)+ε
 
-
-x <- seq(1,200,1)
-y_true <- 5*sin(x^4/5000000)+0.01*x
-y <- y_true+ 2 * rnorm(100)
+n_sample <- 200
+sd <- 1
+x <- seq(0,10,length.out=n_sample)
+y_true <- -2*x+x*sin(2*x)
+y <- y_true+  rnorm(n_sample,sd=sd)
+plot(x,y)
+lines(x,y_true)
