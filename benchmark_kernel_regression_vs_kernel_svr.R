@@ -9,7 +9,7 @@ classical_support_vector_regression <- function(x,y,bandwidth){
   return(list(x=x,y=y,bandwidth=bandwidth,fitted=model$fitted))
 }
 
-idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",eps=10^-11,lambda=0){
+idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",eps=10^-10,lambda=0){
    kernel_matrix <- KRLS::gausskernel(X=x,sigma=bandwidth)
    dirty_kernel_matrix <- kernel_matrix+diag(rep(lambda,length(x)))
    if(method=="quadratic_programming"){	
@@ -33,6 +33,7 @@ idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",
   solution <- try(solution <- solve ( q, dirty_kernel_matrix%*%y),silent=TRUE)
   while(is.character(solution)){
 	  q <- q + diag(rep(eps,length(x)))
+	  eps <- eps*1.5
   #dirty_kernel_matrix <- dirty_kernel_matrix +diag(rep(eps,length(x)))
   #q <- t(dirty_kernel_matrix)%*%dirty_kernel_matrix
   solution <- try(solution <- solve ( q, dirty_kernel_matrix%*%y),silent=TRUE)
@@ -67,7 +68,7 @@ bandwidth_selection <- function(x,y_true,sd,learner,bandwidths,n_rep, ...){
    	
 }
 	  
-bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL,lb=c(0,0),ub=c(100000,10000),bandwidth_only=FALSE){
+bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL,lb=c(0,0),ub=c(10000,100),bandwidth_only=FALSE){
 	lambda <<- NULL
 	bandwidth <<- NULL
 	loss <<- NULL
@@ -80,9 +81,9 @@ bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL,lb=c(0,0),
 		result <- result+ mean((y_true-idempotent_kernel_regression(x,y,bandwidth=param[1],lambda=0)$fitted)^2)
 		  
 	}
-	lambda <<- c(lambda,exp(-param[2]))
-	 bandwidth <<- c(bandwidth,(param[1]))
-	 loss <<- c(loss,result/n_rep)
+	 # lambda <<- c(lambda,param[2])
+	 # bandwidth <<- c(bandwidth,(param[1]))
+	 # loss <<- c(loss,result/n_rep)
   return(result/n_rep)}
 		}
 else{	
@@ -93,17 +94,18 @@ else{
 		result <- result+ mean((y_true-idempotent_kernel_regression(x,y,bandwidth=param[1],lambda=param[2])$fitted)^2)
 		  
 	}
-	lambda <<- c(lambda,exp(-param[2]))
-	 bandwidth <<- c(bandwidth,2^(param[1]))
-	 loss <<- c(loss,result/n_rep)
+	# lambda <<- c(lambda,param[2])
+	 # bandwidth <<- c(bandwidth,2^(param[1]))
+	 # loss <<- c(loss,result/n_rep)
   return(result/n_rep)}
 	}
 	if(is.null(opts)){opts <- list(algorithm="NLOPT_GN_ESCH",maxeval=10^9)} #NLOPT_GN_DIRECT
         if(bandwidth_only){
-	return(nloptr(x0=c(10),eval_f=f,opts=opts,lb=0,ub=50000))
+	return(optimize(f=f,interval=c(0,50000)))
+		#nloptr(x0=c(100),eval_f=f,opts=opts,lb=0,ub=50000))
 		}
 	else{
-	return(nloptr(x0=c(10,1),eval_f=f,opts=opts,lb=lb,ub=ub))
+	return(nloptr(x0=c(100,10^-8),eval_f=f,opts=opts,lb=lb,ub=ub))
 		}
 	#return(optim(fn=f,par=c(10,lambdastart),method=method,control=control))
 }
