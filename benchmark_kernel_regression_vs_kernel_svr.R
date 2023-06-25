@@ -1,5 +1,25 @@
 ### functions
-classical_kernel_regression <- function(x,y,bandwidth){
+
+optimize_twodimensional <- function(f, x0=(lb+ub)/2, lb=c(0,0),ub=c(10^8,10^8),tol=10^-10){
+
+inner_function <- function(x){f(c(x,x0[2]))}
+
+outer_function <- function(x){
+  x0[2] <<- x
+  result <- optimize(f=inner_function, interval =c(lb[1],ub[1]),tol=tol)
+ # x0[1] <- result$objective
+  return(result$objective)
+ }
+ result_2 <-optimize(f=outer_function,interval = c(lb[2],ub[2]),tol=tol)
+ x0 <- c(0,result_2$minimum)
+ 
+ result_1 <- optimize(f=inner_function, interval =c(lb[1],ub[1]),tol=tol)
+return(list(solution=c(result_1$minimum,x0[2]),objective=result_1$objective))
+
+}
+
+
+classical_kernel_regression <- function(x,y,bandwidth,lambda){
   model <- gplm::kreg(x,y,grid=x,bandwidth=bandwidth)
   return(list(x=x,y=y,bandwidth=bandwidth,fitted=model$y))
 }
@@ -68,7 +88,7 @@ bandwidth_selection <- function(x,y_true,sd,learner,bandwidths,n_rep, ...){
    	
 }
 	  
-bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL,lb=c(0,0),ub=c(10000,100),bandwidth_only=FALSE){
+bandwidth_optimization <- function(x,y_true,sd,learner=idempotent_kernel_regression,n_rep,method,opts=NULL,lb=c(0,0),ub=c(10000,100),bandwidth_only=FALSE){
 	lambda <<- NULL
 	bandwidth <<- NULL
 	loss <<- NULL
@@ -78,7 +98,7 @@ bandwidth_optimization <- function(x,y_true,sd,n_rep,method,opts=NULL,lb=c(0,0),
 	  result <-0
 	  for(k in (1:n_rep)){
 		  #y <- y_true+rnorm(length(y_true),sd=sd)
-		result <- result+ mean((y_true-idempotent_kernel_regression(x,y,bandwidth=param[1],lambda=0)$fitted)^2)
+		result <- result+ mean((y_true-learner(x,y,bandwidth=param[1],lambda=0)$fitted)^2)
 		  
 	}
 	 # lambda <<- c(lambda,param[2])
@@ -91,7 +111,7 @@ else{
 	  result <-0
 	  for(k in (1:n_rep)){
 		  #y <- y_true+rnorm(length(y_true),sd=sd)
-		result <- result+ mean((y_true-idempotent_kernel_regression(x,y,bandwidth=param[1],lambda=param[2])$fitted)^2)
+		result <- result+ mean((y_true-learner(x,y,bandwidth=param[1],lambda=param[2])$fitted)^2)
 		  
 	}
 	# lambda <<- c(lambda,param[2])
@@ -101,11 +121,11 @@ else{
 	}
 	if(is.null(opts)){opts <- list(algorithm="NLOPT_GN_ESCH",maxeval=10^9)} #NLOPT_GN_DIRECT
         if(bandwidth_only){
-	return(optimize(f=f,interval=c(0,50000)))
+	return(optimize(f=f,interval=c(0,50000),tol=tol))
 		#nloptr(x0=c(100),eval_f=f,opts=opts,lb=0,ub=50000))
 		}
 	else{
-	return(nloptr(x0=c(100,10^-8),eval_f=f,opts=opts,lb=lb,ub=ub))
+	return(optimize_twodimensional(f=f,lb=c(0,0),ub=c(50000,10000),tol=tol))#nloptr(x0=c(100,10^-8),eval_f=f,opts=opts,lb=lb,ub=ub))
 		}
 	#return(optim(fn=f,par=c(10,lambdastart),method=method,control=control))
 }
