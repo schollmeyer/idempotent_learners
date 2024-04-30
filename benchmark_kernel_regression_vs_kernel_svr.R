@@ -35,6 +35,7 @@ idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",
 	   kernel_matrix <- (1-rho)*kernel_matrix + rho*KRLS::gausskernel(X=x,sigma=bandwidth/factor)
 	   }
    dirty_kernel_matrix <- kernel_matrix+diag(rep(lambda,length(x)))
+   model <- NULL
    if(method=="quadratic_programming"){
    model <- list(Q=t(kernel_matrix)%*%kernel_matrix + diag(rep(eps,length(x))),obj=-2*t(y)%*%kernel_matrix)
    model$A <- array(1,c(1,length(x)))
@@ -205,27 +206,15 @@ total_variation <- function(x,y){
 	}
 
 return(result)}
-<<<<<<< HEAD
-		
-		
-	
-	
-	
-	
-	
-	
-	
-=======
 
 
 
 
 
 
-	}
 
 
->>>>>>> 756be788e6e4f6abf0cb41f067c245892ecb0dd4
+
 
 
 library(nloptr)
@@ -246,7 +235,7 @@ lines(x,y_true)
 ans <- bandwidth_optimization(x,y_true,sd=sd,n_rep=1,method="Nelder-Mead",control=list(maxit=100000000))
 
 idempotent_tuning <- bandwidth_selection(x=x,y_true=y_true,sd=sd,learner=idempotent_kernel_regression,bandwidths=seq(100,5000,length.out=100),n_rep=10,eps=10^-8)
-idempotent_model <- idempotent_kernel_regression(x=x,y=y,bandwidth=idempotent_tuning$optimal_bandwidth,eps=10^-8)
+idempotent_model <- idempotent_kernel_regression(x=x,y=y,bandwidth=1)#idempotent_tuning$optimal_bandwidth,eps=10^-8)
 print(idempotent_tuning$mses)
 lines(x,idempotent_model$fitted,col="blue")
 mean((y_true-idempotent_model$fitted)^2)
