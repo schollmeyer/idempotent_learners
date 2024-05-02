@@ -46,6 +46,10 @@ saveRDS(classical_tuning,"classical_tuning.RDS")
 pplot <- ggplot(data=data.frame(x=x,y=y), aes(x=x,y=y))
 pplot  + layer( mapping = NULL,   position = "identity",   stat="identity",geom = "point") +labs(x = "x",y="y") + layer( mapping = NULL,  data=data.frame(x=x,y=y_true), aes(color = "darkgreen",lwd=.8),position = "identity",   stat="identity",   geom = "line")
 
+
+pplot <- ggplot(data=data.frame(x=x,y=y), aes(x=x,y=y))
+pplot  + layer( mapping = NULL,   position = "identity",   stat="identity",geom = "point") +labs(x = "x",y="y") + layer( mapping = NULL,  data=data.frame(x=x,y=y_true), aes(color = "darkgreen",lwd=.8),position = "identity",   stat="identity",   geom = "line") + layer( mapping = NULL,  data=data.frame(x=x,y=classical_result$fitted), aes(color = "black",lwd=.8),position = "identity",   stat="identity",   geom = "line")
+
 #  layer( mapping = NULL,   position = "identity",   stat="identity",geom = "point") +labs(x = "x",y="y")
 #+ layer( mapping = NULL,  data=data.frame(x=x,y=y_true), aes(color = "darkgreen"",lwd=.8),position = "identity",   stat="identity",   geom = "line")
 
