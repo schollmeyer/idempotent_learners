@@ -29,7 +29,7 @@ classical_support_vector_regression <- function(x,y,bandwidth){
   return(list(x=x,y=y,bandwidth=bandwidth,fitted=model$fitted))
 }
 
-idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",eps=10^-10,lambda=0,spiky=FALSE,rho=0,factor=10){
+idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",eps=10^-8,eps_factor=1.55,lambda=10^-16,spiky=FALSE,rho=0,factor=10){
    kernel_matrix <- KRLS::gausskernel(X=x,sigma=bandwidth)
    if(spiky==TRUE){
 	   kernel_matrix <- (1-rho)*kernel_matrix + rho*KRLS::gausskernel(X=x,sigma=bandwidth/factor)
@@ -57,7 +57,7 @@ idempotent_kernel_regression <- function(x,y,bandwidth,method="dirty_inversion",
   solution <- try(solution <- solve ( q, dirty_kernel_matrix%*%y),silent=TRUE)
   while(is.character(solution)){
 	  q <- q + diag(rep(eps,length(x)))
-	  eps <- eps*1.5
+	  eps <- eps*eps_factor
   #dirty_kernel_matrix <- dirty_kernel_matrix +diag(rep(eps,length(x)))
   #q <- t(dirty_kernel_matrix)%*%dirty_kernel_matrix
   solution <- try(solution <- solve ( q, dirty_kernel_matrix%*%y),silent=TRUE)
