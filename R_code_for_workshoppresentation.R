@@ -49,12 +49,14 @@ pplot  + layer( mapping = NULL,   position = "identity",   stat="identity",geom 
 
 pplot <- ggplot(data=data.frame(x=x,y=y), aes(x=x,y=y))
 pplot  + layer( mapping = NULL,   position = "identity",   stat="identity",geom = "point") +labs(x = "x",y="y") + layer( mapping = NULL,  data=data.frame(x=x,y=y_true), aes(color = "darkgreen",lwd=.8),position = "identity",   stat="identity",   geom = "line") + layer( mapping = NULL,  data=data.frame(x=x,y=classical_result$fitted), aes(color = "black",lwd=.8),position = "identity",   stat="identity",   geom = "line")
+for(k in (1:100)){classical_result <- classical_kernel_regression(x=x,y=classical_result$fitted,bandwidth=bw_classical)}
 #
 
 
 # Spiky kernel
 x_new <- c(x,x+10^-6,x-10^-6)
-y_new <- c(y,classical_result$fitted,classical_result$fitted)
+y_new <- c(y_fitted,classical_result$fitted,classical_result$fitted)
+y_new <- c(y,y_fitted,y_fitted)
 o <- order(x_new)
 pplot <- ggplot(data=data.frame(x=x,y=y), aes(x=x,y=y))
 pplot  + layer( mapping = NULL,   position = "identity",   stat="identity",geom = "point") +labs(x = "x",y="y") + layer( mapping = NULL,  data=data.frame(x=x_new[o],y=y_new[o]), aes(color = "black",lwd=.4),position = "identity",   stat="identity",   geom = "line")
@@ -87,16 +89,16 @@ library(ggplot2)
 set.seed(1234567)
 n_sample <- 75
 sd <- 5
-x <- seq(1,200,length.out=500)
+x <- seq(1,200,length.out=75)
 y_true <- (sin(x/10)+1)/4 +.2
-y <- runif(500) <= y_true
+y <- runif(75) <= y_true
 y <- y*1
 
 
 classical_result <- classical_kernel_regression(x=x,y=y,bandwidth=bw_classical)
 y_fitted <- (classical_result$fitted) >=0.5
 y_fitted=1*y_fitted
-lines(x,classical_result$fitted>=0.5,col="red")
+#lines(x,classical_result$fitted>=0.5,col="red")
 #y <- y_true+ sd * rnorm(n_sample)
-pplot <- ggplot(data=data.frame(x=x,y=y), aes(x=x,y=y))
-pplot  + layer( mapping = NULL,   position = "identity",   stat="identity",geom = "point") +labs(x = "x",y="y") + layer( mapping = NULL,  data=data.frame(x=x,y=y_fitted), aes(color = "darkblue",lwd=.8),position = "identity",   stat="identity",   geom = "line") + layer( mapping = NULL,   position = "identity",   stat="identity",geom = "point",data=data.frame(x=x,y=y_true)) +labs(x = "x",y="y")
+pplot <- ggplot(data=data.frame(x=x,y=y), aes(x=x,y=y),aes(color="grey"))
+pplot  + layer( mapping = NULL,   position = "identity",   stat="identity",geom = "point") +labs(x = "x",y="y") + layer( mapping = NULL,   position = "identity",   stat="identity",geom = "line",data=data.frame(x=x,y=y_true)) +labs(x = "x",y="y")+ layer( mapping = NULL,  data=data.frame(x=x,y=y_fitted), aes(color = "darkblue",lwd=1.2),position = "identity",   stat="identity",   geom = "line")
